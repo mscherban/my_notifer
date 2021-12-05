@@ -3,18 +3,17 @@ from dotenv import load_dotenv
 from discord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
-import time
 
 urls = [
     'https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440'
-    ,
-    'https://www.bestbuy.com/site/dell-s2721dgf-27-gaming-ips-qhd-freesync-and-g-sync-compatible-monitor-with-hdr-displayport-hdmi-accent-grey/6421624.p?skuId=6421624'
+#    ,
+#    'https://www.bestbuy.com/site/dell-s2721dgf-27-gaming-ips-qhd-freesync-and-g-sync-compatible-monitor-with-hdr-displayport-hdmi-accent-grey/6421624.p?skuId=6421624'
 ]
 
 oos_btn = 'c-button c-button-disabled c-button-lg c-button-block add-to-cart-button'
 
 headers = {
-    'User-Agent' : 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
 }
 
 class Lookupbot:
@@ -30,7 +29,7 @@ class Lookupbot:
             i = self.cnt
             url = urls[i % len(urls)]
             print(f'{i}: checking {url}')
-            page = requests.get(url=url, headers=headers)
+            page = requests.get(url=url, headers=headers, timeout=2)
             soup = BeautifulSoup(page.text, 'html.parser')
             OutOfStock = soup.find_all('button', class_=oos_btn)
             self.cnt += 1
