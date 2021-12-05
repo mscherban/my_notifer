@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from discord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
+import logging
 
 urls = [
     'https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440'
@@ -15,6 +16,8 @@ oos_btn = 'c-button c-button-disabled c-button-lg c-button-block add-to-cart-but
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
 }
+
+logging.basicConfig(filename='app.log', level=logging.INFO, filemode='w')
 
 class Lookupbot:
     def __init__(self):
@@ -29,6 +32,7 @@ class Lookupbot:
             i = self.cnt
             url = urls[i % len(urls)]
             print(f'{i}: checking {url}')
+            logging.info(f'{i}: checking {url}')
             page = requests.get(url=url, headers=headers, timeout=2)
             soup = BeautifulSoup(page.text, 'html.parser')
             OutOfStock = soup.find_all('button', class_=oos_btn)
@@ -43,12 +47,14 @@ bot = commands.Bot(command_prefix='`')
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord')
+    logging.info(f'{bot.user} has connected to Discord')
 
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=15)
 async def dolookup():
     status, url = lookup.get_status()
     if status == 0:
         print('>> Not in stock')
+        logging.info('>> Not in stock')
     else:
         print('>> IN STOCK!')
         guild = bot.get_guild(int(lookup.guild_id))
