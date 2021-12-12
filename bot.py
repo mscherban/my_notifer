@@ -33,8 +33,9 @@ class Lookupbot:
 
     def set_id(self, id_name, id):
         self.ids[id_name] = id
-        print('set', id_name, 'as', str(id))
-        logging.info('set ' + id_name + ' as ' + str(id))
+        s = f'set {id_name} as {id}'
+        print(s)
+        logging.info(s)
     
     def get_status(self):
             i = self.cnt
@@ -51,7 +52,6 @@ class Lookupbot:
             else:
                 return 'OutOfStock', url
             
-
 print(f'Hello world')
 
 lookup = Lookupbot()
@@ -69,7 +69,7 @@ async def dolookup():
         guild = bot.get_guild(lookup.ids['GUILD'])
         role = guild.get_role(lookup.ids['ROLE'])
         ch = bot.get_channel(lookup.ids['CHANNEL'])
-        await ch.send(f'In stock! ' + '<@&' + str(role.id) + '>' )
+        await ch.send(f'In stock! <@&{role.id}>')
         await ch.send(url)
         await ch.send('Stopping bot, `start to restart')
         dolookup.stop()
@@ -79,7 +79,7 @@ async def dolookup():
         guild = bot.get_guild(lookup.ids['GUILD'])
         role = guild.get_role(lookup.ids['ROLE'])
         ch = bot.get_channel(lookup.ids['CHANNEL'])
-        await ch.send(f'SOOOOON! ' + '<@&' + str(role.id) + '>' )
+        await ch.send(f'SOOOOON! <@&{role.id}>')
         await ch.send(url)
         await ch.send('Stopping bot, `start to restart')
         dolookup.stop()
@@ -105,7 +105,7 @@ async def stop_the_loop(ctx):
 @bot.command(name='status')
 async def x_status(ctx):
     running = dolookup.is_running()
-    s = 'running=' + str(running) + ',iteration=' + str(lookup.cnt)
+    s = f'running={running},iteration={lookup.cnt}'
     print(s)
     await ctx.send(s)
 
@@ -134,7 +134,7 @@ async def on_ready():
         break
     if not found_guild or not found_channel or not found_role:
         print('did not find guild, channel, or role')
-        logging.info('did not find guild, channel, or role')
+        logging.error('did not find guild, channel, or role')
 
 
 # @dolookup.before_loop
