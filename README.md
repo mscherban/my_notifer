@@ -19,9 +19,9 @@ Create .env file with your: the ID of the guild(server), channel, and role:
 ```
 # .env
 DISCORD_TOKEN=XYXYXYXYXYXYX.SAKDKASKDKASKDAKSD.098788
-GUILD_ID=1112223333444445555666
-CHANNEL_ID=9998887776567543222
-ROLE_ID=000009987755343221211
+GUILD_NAME=MyGuildName
+CHANNEL_ID=MyNotificationChannel
+ROLE_ID=MyRoleToPing
 ```
 
 ## Start the bot:
