@@ -12,6 +12,7 @@ urls = [
 ]
 
 oos_btn = 'c-button c-button-disabled c-button-lg c-button-block add-to-cart-button'
+is_btn = 'c-button c-button-primary c-button-lg c-button-block c-button-icon c-button-icon-leading add-to-cart-button'
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
@@ -23,51 +24,123 @@ class Lookupbot:
     def __init__(self):
         load_dotenv()
         self.TOKEN = os.getenv('DISCORD_TOKEN')
-        self.guild_id = os.getenv('GUILD_ID')
-        self.ch_id = os.getenv('CHANNEL_ID')
-        self.role_id = os.getenv('ROLE_ID')
+        self.names = {'GUILD' : os.getenv('GUILD_NAME'),
+                      'CHANNEL' : os.getenv('CHANNEL_NAME'),
+                      'ROLE' : os.getenv('ROLE_NAME')}
+        print(self.names)
+        self.ids = {}
         self.cnt = 0
+
+    def set_id(self, id_name, id):
+        self.ids[id_name] = id
+        print('set', id_name, 'as', str(id))
+        logging.info('set ' + id_name + ' as ' + str(id))
     
     def get_status(self):
             i = self.cnt
             url = urls[i % len(urls)]
+            self.cnt += 1
             print(f'{i}: checking {url}')
             logging.info(f'{i}: checking {url}')
             page = requests.get(url=url, headers=headers, timeout=2)
             soup = BeautifulSoup(page.text, 'html.parser')
-            OutOfStock = soup.find_all('button', class_=oos_btn)
-            self.cnt += 1
-            return len(OutOfStock) == 0, url
+            if len(soup.find_all('button', class_=is_btn)) > 0:
+                return 'InStock', url
+            elif soup.text.find('High Demand Product') > -1:
+                return 'Pending', url
+            else:
+                return 'OutOfStock', url
+            
 
 print(f'Hello world')
 
 lookup = Lookupbot()
 bot = commands.Bot(command_prefix='`')
 
+@tasks.loop(seconds=15)
+async def dolookup():
+    status, url = lookup.get_status()
+    if status == 'NotInStock':
+        print('>> Not in stock')
+        logging.info('>> Not in stock')
+    elif status == 'InStock':
+        print('>> IN STOCK!')
+        logging.info('>> IN STOCK!')
+        guild = bot.get_guild(lookup.ids['GUILD'])
+        role = guild.get_role(lookup.ids['ROLE'])
+        ch = bot.get_channel(lookup.ids['CHANNEL'])
+        await ch.send(f'In stock! ' + '<@&' + str(role.id) + '>' )
+        await ch.send(url)
+        await ch.send('Stopping bot, `start to restart')
+        dolookup.stop()
+    elif status == 'Pending':
+        print('>> IN STOCK SOON!!')
+        logging.info('>> IN STOCK SOON!!')
+        guild = bot.get_guild(lookup.ids['GUILD'])
+        role = guild.get_role(lookup.ids['ROLE'])
+        ch = bot.get_channel(lookup.ids['CHANNEL'])
+        await ch.send(f'SOOOOON! ' + '<@&' + str(role.id) + '>' )
+        await ch.send(url)
+        await ch.send('Stopping bot, `start to restart')
+        dolookup.stop()
+
+@bot.command(name='start')
+async def start_the_loop(ctx):
+    if not dolookup.is_running():
+        await ctx.send('Starting...')
+        dolookup.start()
+        logging.info('>> Starting Bot')
+    else:
+        await ctx.send('Already running...')
+
+@bot.command(name='stop')
+async def stop_the_loop(ctx):
+    if dolookup.is_running():
+        await ctx.send('Stopping...')
+        logging.info('>> Stopping bot')
+        dolookup.stop()
+    else:
+        await ctx.send('Already stopped...')
+
+@bot.command(name='status')
+async def x_status(ctx):
+    running = dolookup.is_running()
+    s = 'running=' + str(running) + ',iteration=' + str(lookup.cnt)
+    print(s)
+    await ctx.send(s)
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.errors.CheckFailure):
+        await ctx.send('Bot error')
+
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord')
     logging.info(f'{bot.user} has connected to Discord')
+    found_guild, found_channel, found_role = False, False, False
+    for guild in bot.guilds:
+        if guild.name == lookup.names['GUILD']:
+            found_guild = True
+            lookup.set_id('GUILD', guild.id)
+            for channel in guild.channels:
+                if channel.name == lookup.names['CHANNEL']:
+                    found_channel = True
+                    lookup.set_id('CHANNEL', channel.id)
+            for role in guild.roles:
+                if role.name == lookup.names['ROLE']:
+                    found_role = True
+                    lookup.set_id('ROLE', role.id)
+        break
+    if not found_guild or not found_channel or not found_role:
+        print('did not find guild, channel, or role')
+        logging.info('did not find guild, channel, or role')
 
-@tasks.loop(seconds=15)
-async def dolookup():
-    status, url = lookup.get_status()
-    if status == 0:
-        print('>> Not in stock')
-        logging.info('>> Not in stock')
-    else:
-        print('>> IN STOCK!')
-        guild = bot.get_guild(int(lookup.guild_id))
-        role = guild.get_role(int(lookup.role_id))
-        ch = bot.get_channel(int(lookup.ch_id))
-        await ch.send(f'In stock! ' + '<@&' + str(role.id) + '>' )
-        await ch.send(url)
 
+# @dolookup.before_loop
+# async def before_dolookup():
+#     print ('waiting...')
+#     await bot.wait_until_ready()
 
-@dolookup.before_loop
-async def before_dolookup():
-    print ('waiting...')
-    await bot.wait_until_ready()
-
-dolookup.start()
+#dolookup.start()
 bot.run(lookup.TOKEN)
