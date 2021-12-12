@@ -55,7 +55,7 @@ class Lookupbot:
 print(f'Hello world')
 
 lookup = Lookupbot()
-bot = commands.Bot(command_prefix='`')
+bot = commands.Bot(command_prefix='~')
 
 @tasks.loop(seconds=15)
 async def dolookup():
