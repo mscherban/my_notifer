@@ -50,7 +50,7 @@ class Lookupbot:
             elif soup.text.find('High Demand Product') > -1:
                 return 'Pending', url
             else:
-                return 'OutOfStock', url
+                return 'NotInStock', url
             
 print(f'Hello world')
 
@@ -83,6 +83,9 @@ async def dolookup():
         await ch.send(url)
         await ch.send('Stopping bot, `start to restart')
         dolookup.stop()
+    else:
+        print('I should not be here')
+        logging.info('I should not be here')
 
 @bot.command(name='start')
 async def start_the_loop(ctx):
@@ -90,6 +93,7 @@ async def start_the_loop(ctx):
         await ctx.send('Starting...')
         dolookup.start()
         logging.info('>> Starting Bot')
+        print('>> Starting Bot')
     else:
         await ctx.send('Already running...')
 
@@ -98,6 +102,7 @@ async def stop_the_loop(ctx):
     if dolookup.is_running():
         await ctx.send('Stopping...')
         logging.info('>> Stopping bot')
+        print('>> Stopping bot')
         dolookup.stop()
     else:
         await ctx.send('Already stopped...')
@@ -144,3 +149,4 @@ async def on_ready():
 
 #dolookup.start()
 bot.run(lookup.TOKEN)
+
